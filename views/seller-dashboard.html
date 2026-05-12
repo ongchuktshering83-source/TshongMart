@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Tshongmart</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #DDECF6; }
+        .navbar { background: white; padding: 1rem; box-shadow: 0 2px 8px rgba(24,78,108,0.1); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+        .logo { font-size: 1.8rem; font-weight: bold; color: #184E6C; display: inline-block; }
+        .logo span { color: #5BA3C6; }
+        .nav-links { float: right; margin-top: 8px; }
+        .nav-links a { margin-left: 20px; text-decoration: none; color: #387EA2; cursor: pointer; }
+        .clearfix { clear: both; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1rem; border-radius: 12px; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #184E6C; }
+        .stat-label { color: #387EA2; margin-top: 0.5rem; }
+        
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #DDECF6; }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border: none; background: none; font-size: 1rem; }
+        .tab.active { color: #184E6C; border-bottom: 2px solid #184E6C; font-weight: bold; }
+        
+        .product-card, .order-card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        .product-img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+        .product-info { flex: 2; }
+        .product-actions { display: flex; gap: 0.5rem; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
+        .status-available { background: #d4edda; color: #155724; }
+        .status-sold { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        .btn-primary { background: #387EA2; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-warning { background: #ffc107; color: #184E6C; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { background: white; max-width: 500px; margin: 50px auto; padding: 2rem; border-radius: 16px; }
+        
+        .footer { background: #184E6C; color: #9BCBE5; text-align: center; padding: 2rem; margin-top: 2rem; }
+        @media (max-width: 768px) { .product-card { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/seller-dashboard">Seller Hub</a>
+                <a href="/profile">Profile</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    <!-- <div class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">Profile</a>
+                <a href="/contact">Contact</a>
+                 <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div> -->
+
+    <div class="container">
+        <h1>Seller Dashboard</h1>
+        
+        <div class="stats-grid" id="stats">
+            <div class="stat-card"><div class="stat-number" id="totalProducts">0</div><div class="stat-label">Total Products</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalSales">0</div><div class="stat-label">Total Sales</div></div>
+            <div class="stat-card"><div class="stat-number" id="pendingOrders">0</div><div class="stat-label">Pending Orders</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalRevenue">Nu. 0</div><div class="stat-label">Revenue</div></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('products')">My Products</button>
+            <button class="tab" onclick="showTab('orders')">Orders Received</button>
+        </div>
+
+        <div id="products-tab">
+            <div id="products-list"></div>
+        </div>
+        <div id="orders-tab" style="display:none;">
+            <div id="orders-list"></div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Product</h2>
+            <form id="editForm">
+                <input type="hidden" id="editProductId">
+                <input type="text" id="editTitle" placeholder="Title" required style="width:100%; padding:0.5rem; margin:0.5rem 0;">
+                <textarea id="editDescription" placeholder="Description" rows="3" style="width:100%; padding:0.5rem; margin:0.5rem 0;"></textarea>
+                <input type="number" id="editPrice" placeholder="Price" required style="width:100%; padding:0.5rem; margin:0.5rem 0;">
+                <input type="text" id="editCondition" placeholder="Condition" style="width:100%; padding:0.5rem; margin:0.5rem 0;">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <button type="button" class="btn-danger" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container"><p>&copy; 2024 Tshongmart. All rights reserved.</p></div>
+    </div>
+
+    <script>
+        let currentTab = 'products';
+
+        function showTab(tab) {
+            currentTab = tab;
+            document.getElementById('products-tab').style.display = tab === 'products' ? 'block' : 'none';
+            document.getElementById('orders-tab').style.display = tab === 'orders' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            if (tab === 'products') loadProducts();
+            else loadOrders();
+        }
+
+        function loadProducts() {
+            fetch('/api/seller/products')
+                .then(res => res.json())
+                .then(products => {
+                    const container = document.getElementById('products-list');
+                    if (!products || products.length === 0) {
+                        container.innerHTML = '<p>No products listed. <a href="/dashboard">Sell an item</a></p>';
+                        return;
+                    }
+                    
+                    document.getElementById('totalProducts').innerText = products.length;
+                    
+                    container.innerHTML = products.map(p => `
+                        <div class="product-card">
+                            ${p.image_url ? `<img class="product-img" src="${p.image_url}" onerror="this.src='https://via.placeholder.com/80'">` : '<div class="product-img" style="background:#f0f0f0; display:flex; align-items:center; justify-content:center;">📷</div>'}
+                            <div class="product-info">
+                                <h3>${escapeHtml(p.title)}</h3>
+                                <p>${escapeHtml((p.description || '').substring(0, 100))}</p>
+                                <div class="price">Nu. ${p.price.toLocaleString()}</div>
+                                <span class="status-badge status-${p.status === 'available' ? 'available' : 'sold'}">${p.status || 'available'}</span>
+                                <span style="margin-left:1rem;">📊 Sold: ${p.times_sold || 0} times</span>
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn-primary" onclick="editProduct(${p.id})">✏️ Edit</button>
+                                <button class="btn-warning" onclick="toggleStatus(${p.id}, '${p.status}')">${p.status === 'available' ? '📦 Mark Sold' : '🔄 Mark Available'}</button>
+                                <button class="btn-danger" onclick="deleteProduct(${p.id})">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function loadOrders() {
+            fetch('/api/seller/orders')
+                .then(res => res.json())
+                .then(orders => {
+                    const container = document.getElementById('orders-list');
+                    if (!orders || orders.length === 0) {
+                        container.innerHTML = '<p>No orders received yet.</p>';
+                        return;
+                    }
+                    
+                    document.getElementById('pendingOrders').innerText = orders.filter(o => o.status === 'pending').length;
+                    document.getElementById('totalSales').innerText = orders.length;
+                    document.getElementById('totalRevenue').innerText = 'Nu. ' + orders.reduce((sum, o) => sum + o.total, 0).toLocaleString();
+                    
+                    container.innerHTML = orders.map(o => `
+                        <div class="order-card">
+                            <div>
+                                <strong>Order #${o.id}</strong><br>
+                                Buyer: ${escapeHtml(o.buyer_name || o.buyer_email)}<br>
+                                Total: Nu. ${o.total.toLocaleString()}<br>
+                                Status: <span class="status-badge status-${o.status === 'pending' ? 'pending' : (o.status === 'completed' ? 'available' : '')}">${o.status}</span><br>
+                                Date: ${new Date(o.created_at).toLocaleDateString()}
+                            </div>
+                            <div style="margin-left:auto;">
+                                ${o.verified ? '✅ Payment Verified' : '⏳ Awaiting Verification'}<br>
+                                ${o.tracking_number ? `📦 Tracking: ${o.tracking_number}` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function editProduct(id) {
+            fetch('/api/seller/products')
+                .then(res => res.json())
+                .then(products => {
+                    const product = products.find(p => p.id === id);
+                    if (product) {
+                        document.getElementById('editProductId').value = product.id;
+                        document.getElementById('editTitle').value = product.title;
+                        document.getElementById('editDescription').value = product.description;
+                        document.getElementById('editPrice').value = product.price;
+                        document.getElementById('editCondition').value = product.condition;
+                        document.getElementById('editModal').style.display = 'block';
+                    }
+                });
+        }
+
+        document.getElementById('editForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editProductId').value;
+            const data = {
+                title: document.getElementById('editTitle').value,
+                description: document.getElementById('editDescription').value,
+                price: parseFloat(document.getElementById('editPrice').value),
+                condition: document.getElementById('editCondition').value
+            };
+            
+            fetch(`/api/seller/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                closeModal();
+                loadProducts();
+                alert('Product updated!');
+            });
+        });
+
+        function toggleStatus(id, currentStatus) {
+            const newStatus = currentStatus === 'available' ? 'sold' : 'available';
+            fetch(`/api/seller/products/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            }).then(() => loadProducts());
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                fetch(`/api/seller/products/${id}`, { method: 'DELETE' })
+                    .then(() => loadProducts());
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/');
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>

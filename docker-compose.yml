@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: tshongmart_db
+    environment:
+      POSTGRES_USER: tshonguser
+      POSTGRES_PASSWORD: tshongpass
+      POSTGRES_DB: tshongmart
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - tshong_network
+
+  app:
+    build: .
+    container_name: tshongmart_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: tshonguser
+      DB_PASSWORD: tshongpass
+      DB_NAME: tshongmart
+      DB_PORT: 5432
+      SESSION_SECRET: your-super-secret-key-change-this-in-production
+    volumes:
+      - .:/app
+    networks:
+      - tshong_network
+
+volumes:
+  pgdata:
+
+networks:
+  tshong_network:
+    driver: bridge

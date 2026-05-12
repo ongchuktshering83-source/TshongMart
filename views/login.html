@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Tshongmart</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/contact">Contact</a>
+                <a href="/register">Register</a>
+            </div>
+        </div>
+    </nav>
+    <!-- <div class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">Profile</a>
+                <a href="/contact">Contact</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div> -->
+
+    <div class="container" style="max-width: 500px; margin: 4rem auto;">
+        <div style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #9BCBE5;">
+            <h1 style="color: #184E6C; text-align: center;">Login</h1>
+            <form method="POST" action="/login">
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #DDECF6;">
+                <p style="text-align: center; color: #387EA2;">Test Accounts:</p>
+                <p style="font-size: 0.9rem; text-align: center;">
+                    <strong>Seller:</strong> seller@tshongmart.com / password123<br>
+                    <strong>Buyer:</strong> buyer@tshongmart.com / password123
+                </p>
+                <p style="text-align: center; margin-top: 1rem;">
+                    <a href="/register">Don't have an account? Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Tshongmart</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/contact">Contact</a>
+                <a href="/login">Login</a>
+            </div>
+        </div>
+    </nav>
+     <!-- <nav class="navbar">
+    <div class="navbar">
+        <div class="container">
+            <div class="logo">Tshong<span>mart</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/products">Products</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">Profile</a>
+                <a href="/contact">Contact</a>
+                 <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    </nav> -->
+
+    <div class="container" style="max-width: 500px; margin: 4rem auto;">
+        <div style="background: white; padding: 2rem; border-radius: 16px; border: 1px solid #9BCBE5;">
+            <h1 style="color: #184E6C; text-align: center;">Create Account</h1>
+            <form method="POST" action="/register">
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <input type="text" name="full_name" placeholder="Full Name">
+                <input type="text" name="phone" placeholder="Phone Number">
+                <select name="role">
+                    <option value="buyer">I want to buy</option>
+                    <option value="seller">I want to sell</option>
+                    <option value="both">I want to both buy and sell</option>
+                </select>
+                <button type="submit" class="btn-primary" style="width: 100%;">Register</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">
+                <a href="/login">Already have an account? Login here</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
