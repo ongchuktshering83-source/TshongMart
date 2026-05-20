@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +14,8 @@
         .nav-links { float: right; margin-top: 8px; }
         .nav-links a { margin-left: 20px; text-decoration: none; color: #387EA2; cursor: pointer; }
         .clearfix { clear: both; }
+        .banned-notice { background: #dc3545; color: white; padding: 2rem; border-radius: 16px; text-align: center; margin: 2rem 0; }
+        .banned-notice h2 { margin-bottom: 1rem; }
         .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; margin: 2rem 0; }
         .sidebar { background: white; border-radius: 16px; padding: 1.5rem; height: fit-content; }
         .sidebar h3 { color: #184E6C; margin-bottom: 1rem; }
@@ -22,290 +23,261 @@
         .sidebar a:hover { background: #DDECF6; }
         .content { background: white; border-radius: 16px; padding: 1.5rem; }
         .content h2 { color: #184E6C; margin-bottom: 1.5rem; }
-        
-        /* Form Styles */
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; color: #184E6C; font-weight: 500; }
-        .form-group input, .form-group textarea, .form-group select { 
-            width: 100%; padding: 0.75rem; border: 1px solid #9BCBE5; border-radius: 8px; 
-            font-family: inherit; font-size: 1rem;
-        }
-        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #387EA2; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #9BCBE5; border-radius: 8px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        
-        /* Image Upload */
         .upload-area { border: 2px dashed #9BCBE5; padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 1rem; cursor: pointer; }
         .upload-area:hover { background: #DDECF6; }
         .image-preview { margin-top: 1rem; }
         .image-preview img { max-width: 150px; border-radius: 8px; }
-        
-        .btn-primary { background: #387EA2; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; width: 100%; }
-        .btn-primary:hover { background: #184E6C; }
+        .btn-primary { background: #387EA2; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; }
         .btn-danger { background: #dc3545; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
         .btn-success { background: #28a745; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
-        
+        .btn-warning { background: #ffc107; color: #333; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
         .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
         .status-available { background: #28a745; color: white; }
         .status-sold { background: #dc3545; color: white; }
-        .status-pending { background: #ffc107; color: #333; }
-        .status-shipped { background: #17a2b8; color: white; }
-        .status-delivered { background: #28a745; color: white; }
-        
+        .status-banned { background: #dc3545; color: white; }
+        .status-active { background: #28a745; color: white; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #DDECF6; }
         th { background: #DDECF6; }
         .product-img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+        .admin-badge { background: #184E6C; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.5rem; }
         .footer { background: #184E6C; color: #9BCBE5; padding: 2rem; margin-top: 2rem; text-align: center; }
-        
-        @media (max-width: 768px) { 
-            .dashboard-grid { grid-template-columns: 1fr; }
-            .form-row { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <div class="container">
-            <div class="logo">Tshong<span>mart</span></div>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/products">Products</a>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/profile">Profile</a>
-                <a href="/contact">Contact</a>
-               <a href="#" onclick="logout()">Logout</a>
-            </div>
-            <div class="clearfix"></div>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="dashboard-grid">
-            <div class="sidebar">
-                <h3>My Account</h3>
-                <a onclick="showSection('my-products')">📦 My Products</a>
-                <a onclick="showSection('my-orders')">📋 My Purchases</a>
-                <a onclick="showSection('seller-orders')">💰 Orders Received</a>
-                <a onclick="showSection('cart')">🛒 Shopping Cart</a>
-                <a onclick="showSection('sell')">💰 Sell an Item</a>
-            </div>
-            <div class="content">
-                <!-- My Products Section -->
-                <div id="my-products-section" style="display:block;">
-                    <h2>My Products</h2>
-                    <div id="my-products-list">Loading...</div>
-                </div>
-
-                <!-- My Orders (Buying) Section -->
-                <div id="my-orders-section" style="display:none;">
-                    <h2>My Purchases</h2>
-                    <div id="my-orders-list">Loading...</div>
-                </div>
-
-                <!-- Orders Received (Selling) Section -->
-                <div id="seller-orders-section" style="display:none;">
-                    <h2>Orders Received</h2>
-                    <div id="seller-orders-list">Loading...</div>
-                </div>
-
-                <!-- Cart Section -->
-                <div id="cart-section" style="display:none;">
-                    <h2>Shopping Cart</h2>
-                    <div id="cart-items"></div>
-                    <div id="cart-total" style="margin-top: 1rem;"></div>
-                </div>
-
-                <!-- Sell Section - ORGANIZED -->
-                <div id="sell-section" style="display:none;">
-                    <h2>Sell an Item</h2>
-                    <form id="product-form">
-                        <!-- Basic Info -->
-                        <div class="form-group">
-                            <label>Product Title *</label>
-                            <input type="text" id="title" placeholder="e.g., Siemens PLC S7-1200" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Description *</label>
-                            <textarea id="description" placeholder="Describe your product in detail..." rows="4" required></textarea>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Price (Nu.) *</label>
-                                <input type="number" id="price" placeholder="e.g., 25000" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Condition *</label>
-                                <select id="condition">
-                                    <option value="New">New</option>
-                                    <option value="Like New">Like New</option>
-                                    <option value="Very Good">Very Good</option>
-                                    <option value="Good">Good</option>
-                                    <option value="Fair">Fair</option>
-                                    <option value="Used">Used</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Image Upload -->
-                        <div class="form-group">
-                            <label>Product Image</label>
-                            <div class="upload-area" onclick="document.getElementById('productImage').click()">
-                                📸 Click or drag to upload image
-                                <input type="file" id="productImage" accept="image/*" style="display:none">
-                            </div>
-                            <div id="imagePreview" class="image-preview"></div>
-                        </div>
-                        
-                        <!-- Contact Info -->
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>WhatsApp Link (optional)</label>
-                                <input type="text" id="whatsapp" placeholder="https://wa.me/975XXXXXXXX">
-                            </div>
-                            <div class="form-group">
-                                <label>Telegram Link (optional)</label>
-                                <input type="text" id="telegram" placeholder="https://t.me/username">
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn-primary">List Product</button>
-                    </form>
+        <div class="logo">Tshong<span>mart</span></div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/products">Products</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/inbox">📬 Inbox</a>
+            <a href="/profile">Profile</a>
+            <div class="dropdown" style="position:relative; display:inline-block;">
+                <button class="dropdown-btn" style="background:#387EA2; color:white; padding:0.4rem 1rem; border:none; border-radius:6px; cursor:pointer;">
+                    👤 Account ▼
+                </button>
+                <div class="dropdown-content" style="display:none; position:absolute; right:0; background:white; min-width:150px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); z-index:100;">
+                    <a href="/profile" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:#387EA2;">Profile</a>
+                    <a href="/dashboard" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:#387EA2;">Dashboard</a>
+                    <a href="/inbox" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:#387EA2;">Inbox</a>
+                    <hr style="margin:0.2rem 0;">
+                    <a href="#" onclick="logout()" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:#dc3545;">Logout</a>
                 </div>
             </div>
         </div>
+        <div class="clearfix"></div>
     </div>
+</div>
 
-    <div class="footer">
-        <div class="container">
-            <p>&copy; 2024 Tshongmart. All rights reserved.</p>
-        </div>
-    </div>
+    <div id="main-content"></div>
+
+    <div class="footer"><div class="container"><p>&copy; 2024 Tshongmart. All rights reserved.</p></div></div>
 
     <script>
         let uploadedImageUrl = '';
+        let currentUserRole = '';
+        let currentUserId = 0;
+        let isBanned = false;
+        let banReason = '';
+        
+        fetch('/api/user/profile')
+            .then(res => res.json())
+            .then(user => {
+                currentUserRole = user.role;
+                currentUserId = user.id;
+                isBanned = user.is_banned === 1 || user.is_banned === true;
+                banReason = user.ban_reason || '';
+                
+                if (isBanned) {
+                    showBannedPage();
+                } else {
+                    showNormalDashboard();
+                    if (user.role === 'admin') {
+                        document.getElementById('admin-menu-section').style.display = 'block';
+                    }
+                }
+            })
+            .catch(() => { showNormalDashboard(); });
+        
+        function showBannedPage() {
+            document.getElementById('main-content').innerHTML = `
+                <div class="container">
+                    <div class="banned-notice">
+                        <h2>⚠️ Account Banned</h2>
+                        <p>Your account has been suspended due to violation of our terms.</p>
+                        <p><strong>Reason:</strong> ${escapeHtml(banReason) || 'Violation of community guidelines'}</p>
+                        <p style="margin-top: 1rem;">Please contact the administrator for more information.</p>
+                        <button class="btn-primary" onclick="window.location.href='/inbox'">Contact Admin</button>
+                        <button class="btn-danger" onclick="logout()" style="margin-left: 1rem;">Logout</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showNormalDashboard() {
+            document.getElementById('main-content').innerHTML = `
+                <div class="container">
+                    <div class="dashboard-grid">
+                        <div class="sidebar">
+                            <h3>My Account</h3>
+                            <a onclick="showSection('my-products')">📦 My Products</a>
+                            <a onclick="showSection('my-orders')">📋 My Purchases</a>
+                            <a onclick="showSection('seller-orders')">💰 Orders Received</a>
+                            <a onclick="showSection('cart')">🛒 Shopping Cart</a>
+                            <a onclick="showSection('sell')">💰 Sell an Item</a>
+                            <a href="/inbox" style="background:#DDECF6; margin-top:0.5rem;">📬 Messages</a>
+                            <div id="admin-menu-section" style="display:none; margin-top: 1rem; border-top: 1px solid #DDECF6; padding-top: 1rem;">
+                                <h3 style="color:#184E6C;">🔐 Admin Zone</h3>
+                                <a onclick="showSection('admin-products')">👑 All Products</a>
+                                <a onclick="showSection('admin-users')">👥 Manage Users</a>
+                                <a onclick="showSection('admin-reports')">📋 Reports</a>
+                                <a href="/inbox">📬 Admin Inbox</a>
+                            </div>
+                        </div>
+                        <div class="content">
+                            <div id="my-products-section" style="display:block;"><h2>My Products</h2><div id="my-products-list">Loading...</div></div>
+                            <div id="my-orders-section" style="display:none;"><h2>My Purchases</h2><div id="my-orders-list">Loading...</div></div>
+                            <div id="seller-orders-section" style="display:none;"><h2>Orders Received</h2><div id="seller-orders-list">Loading...</div></div>
+                            <div id="cart-section" style="display:none;"><h2>Shopping Cart</h2><div id="cart-items"></div><div id="cart-total"></div></div>
+                            <div id="sell-section" style="display:none;"><h2>Sell an Item</h2><form id="product-form"><div class="form-group"><label>Product Title *</label><input type="text" id="title" required></div><div class="form-group"><label>Description *</label><textarea id="description" rows="4" required></textarea></div><div class="form-row"><div class="form-group"><label>Price (Nu.) *</label><input type="number" id="price" required></div><div class="form-group"><label>Condition *</label><select id="condition"><option value="New">New</option><option value="Like New">Like New</option><option value="Good">Good</option><option value="Used">Used</option></select></div></div><div class="form-group"><label>Product Image</label><div class="upload-area" onclick="document.getElementById('productImage').click()">📸 Click to upload image<input type="file" id="productImage" accept="image/*" style="display:none"></div><div id="imagePreview" class="image-preview"></div></div><div class="form-row"><div class="form-group"><label>WhatsApp Link</label><input type="text" id="whatsapp" placeholder="https://wa.me/..."></div><div class="form-group"><label>Telegram Link</label><input type="text" id="telegram" placeholder="https://t.me/..."></div></div><button type="submit" class="btn-primary">List Product</button></form></div>
+                            <div id="admin-products-section" style="display:none;"><h2>👑 All Products <span class="admin-badge">Admin View</span></h2><div id="admin-products-list">Loading...</div></div>
+                            <div id="admin-users-section" style="display:none;"><h2>👥 Manage Users <span class="admin-badge">Admin View</span></h2><div id="admin-users-list">Loading...</div></div>
+                            <div id="admin-reports-section" style="display:none;"><h2>📋 Product Reports <span class="admin-badge">Admin View</span></h2><div id="admin-reports-list">Loading...</div></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            attachEventHandlers();
+            showSection('my-products');
+        }
+        
+        function attachEventHandlers() {
+            document.getElementById('productImage')?.addEventListener('change', function(e) {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader(); reader.onload = function(evt) { document.getElementById('imagePreview').innerHTML = `<img src="${evt.target.result}" style="max-width:150px">`; }; reader.readAsDataURL(file);
+                const formData = new FormData(); formData.append('image', file);
+                fetch('/api/upload', { method: 'POST', body: formData }).then(res => res.json()).then(data => { uploadedImageUrl = data.image_url; });
+            });
+            document.getElementById('product-form')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const product = { title: document.getElementById('title').value, description: document.getElementById('description').value, price: parseFloat(document.getElementById('price').value), condition: document.getElementById('condition').value, image_url: uploadedImageUrl, whatsapp_link: document.getElementById('whatsapp').value, telegram_link: document.getElementById('telegram').value };
+                fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(product) }).then(() => { alert('✅ Product listed!'); location.reload(); });
+            });
+        }
         
         function showSection(section) {
-            const sections = ['my-products', 'my-orders', 'seller-orders', 'cart', 'sell'];
-            sections.forEach(s => {
-                const el = document.getElementById(`${s}-section`);
-                if (el) el.style.display = 'none';
-            });
+            const sections = ['my-products', 'my-orders', 'seller-orders', 'cart', 'sell', 'admin-products', 'admin-users', 'admin-reports'];
+            sections.forEach(s => { const el = document.getElementById(`${s}-section`); if (el) el.style.display = 'none'; });
             document.getElementById(`${section}-section`).style.display = 'block';
-            
             if (section === 'my-products') loadMyProducts();
             if (section === 'my-orders') loadMyOrders();
             if (section === 'seller-orders') loadSellerOrders();
             if (section === 'cart') loadCart();
+            if (section === 'admin-products') loadAdminProducts();
+            if (section === 'admin-users') loadAdminUsers();
+            if (section === 'admin-reports') loadAdminReports();
         }
         
-        // Load My Products
         function loadMyProducts() {
-            fetch('/api/seller/products')
-                .then(res => res.json())
-                .then(products => {
-                    const container = document.getElementById('my-products-list');
-                    if (!products || products.length === 0) {
-                        container.innerHTML = '<p>No products listed yet. <a onclick="showSection(\'sell\')">Sell your first item!</a></p>';
-                        return;
-                    }
-                    container.innerHTML = `
-                        <table>
-                            <tr><th>Image</th><th>Title</th><th>Price</th><th>Status</th><th>Actions</th></tr>
-                            ${products.map(p => `
-                                <tr>
-                                    <td>${p.image_url ? `<img src="${p.image_url}" class="product-img">` : '📷'}</td>
-                                    <td>${p.title}</td>
-                                    <td>Nu. ${p.price.toLocaleString()}</td>
-                                    <td><span class="status-badge status-${p.status === 'available' ? 'available' : 'sold'}">${p.status || 'available'}</span></td>
-                                    <td>
-                                        <button class="btn-success" onclick="toggleStatus(${p.id}, '${p.status}')">${p.status === 'available' ? 'Mark Sold' : 'Mark Available'}</button>
-                                        <button class="btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                    `;
-                });
+            fetch('/api/seller/products').then(res => res.json()).then(products => {
+                const container = document.getElementById('my-products-list');
+                if (!products || products.length === 0) { container.innerHTML = '<p>No products. <a onclick="showSection(\'sell\')">Sell your first item!</a></p>'; return; }
+                container.innerHTML = `<table><tr><th>Image</th><th>Title</th><th>Price</th><th>Status</th><th>Actions</th></tr>${products.map(p => `<tr><td>${p.image_url ? `<img src="${p.image_url}" class="product-img">` : '📷'}</td><td>${escapeHtml(p.title)}</td><td>Nu. ${p.price.toLocaleString()}</td><td><span class="status-badge status-${p.status === 'available' ? 'available' : 'sold'}">${p.status || 'available'}</span></td><td><button class="btn-success" onclick="toggleStatus(${p.id}, '${p.status}')">${p.status === 'available' ? 'Mark Sold' : 'Mark Available'}</button><button class="btn-danger" onclick="deleteProduct(${p.id})">Delete</button></td></tr>`).join('')}</table>`;
+            });
         }
         
         function toggleStatus(id, currentStatus) {
             const newStatus = currentStatus === 'available' ? 'sold' : 'available';
-            fetch(`/api/seller/products/${id}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            }).then(() => loadMyProducts());
+            fetch(`/api/seller/products/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) }).then(() => loadMyProducts());
         }
         
-        function deleteProduct(id) {
-            if (confirm('Are you sure you want to delete this product?')) {
-                fetch(`/api/seller/products/${id}`, { method: 'DELETE' })
-                    .then(() => loadMyProducts());
-            }
-        }
+        function deleteProduct(id) { if (confirm('Delete this product?')) { fetch(`/api/seller/products/${id}`, { method: 'DELETE' }).then(() => loadMyProducts()); } }
         
-        // Load My Orders
         function loadMyOrders() {
-            fetch('/api/my-orders')
-                .then(res => res.json())
-                .then(orders => {
-                    const container = document.getElementById('my-orders-list');
-                    if (!orders || orders.length === 0) {
-                        container.innerHTML = '<p>No orders yet.</p>';
-                        return;
-                    }
-                    container.innerHTML = `
-                        <table>
-                            <tr><th>Order ID</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr>
-                            ${orders.map(o => `
-                                <tr>
-                                    <td>#${o.id}</td>
-                                    <td>Nu. ${o.total.toLocaleString()}</td>
-                                    <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                                    <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                                    <td>${o.status === 'pending' ? `<button class="btn-danger" onclick="cancelOrder(${o.id})">Cancel</button>` : ''}</td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                    `;
-                });
+            fetch('/api/my-orders').then(res => res.json()).then(orders => {
+                const container = document.getElementById('my-orders-list');
+                if (!orders || orders.length === 0) { container.innerHTML = '<p>No orders yet.</p>'; return; }
+                container.innerHTML = `<table><tr><th>Order ID</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr>${orders.map(o => `<tr><td>#${o.id}</td><td>Nu. ${o.total.toLocaleString()}</td><td><span class="status-badge">${o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.status === 'pending' ? `<button class="btn-danger" onclick="cancelOrder(${o.id})">Cancel</button>` : ''}</td></tr>`).join('')}</table>`;
+            });
         }
         
-        function cancelOrder(id) {
-            if (confirm('Cancel this order?')) {
-                fetch(`/api/orders/${id}/cancel`, { method: 'POST' })
-                    .then(() => loadMyOrders());
-            }
-        }
+        function cancelOrder(id) { if (confirm('Cancel this order?')) { fetch(`/api/orders/${id}/cancel`, { method: 'POST' }).then(() => loadMyOrders()); } }
         
-        // Load Seller Orders
         function loadSellerOrders() {
-            fetch('/api/seller/orders')
+            fetch('/api/seller/orders').then(res => res.json()).then(orders => {
+                const container = document.getElementById('seller-orders-list');
+                if (!orders || orders.length === 0) { container.innerHTML = '<p>No orders received yet.</p>'; return; }
+                container.innerHTML = `<table><tr><th>Order ID</th><th>Buyer</th><th>Total</th><th>Status</th><th>Update</th></tr>${orders.map(o => `<tr><td>#${o.id}</td><td>${o.buyer_name || o.buyer_email}</td><td>Nu. ${o.total.toLocaleString()}</td><td><span class="status-badge">${o.status}</span></td><td><select onchange="updateOrderStatus(${o.id}, this.value)"><option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option><option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option><option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>Shipped</option><option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option></select></td></tr>`).join('')}</table>`;
+            });
+        }
+        
+        function updateOrderStatus(orderId, status) { fetch(`/api/seller/orders/${orderId}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) }).then(() => loadSellerOrders()); }
+        
+        function loadCart() {
+            fetch('/api/cart').then(res => res.json()).then(data => {
+                const container = document.getElementById('cart-items'); const totalDiv = document.getElementById('cart-total');
+                if (data.items && data.items.length) {
+                    container.innerHTML = `<table><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr>${data.items.map(item => `<tr><td>${escapeHtml(item.title)}</td><td>Nu. ${item.price.toLocaleString()}</td><td>${item.quantity}</td><td>Nu. ${item.subtotal.toLocaleString()}</td></tr>`).join('')}<table>`;
+                    totalDiv.innerHTML = `<h3>Total: Nu. ${data.total.toLocaleString()}</h3><button class="btn-primary" onclick="checkout()">Checkout</button>`;
+                } else { container.innerHTML = '<p>Cart empty</p>'; totalDiv.innerHTML = ''; }
+            });
+        }
+        
+        function checkout() { const journal = prompt('Enter journal number:'); if (journal) { fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ journal_number: journal }) }).then(() => { alert('Order placed!'); loadCart(); }); } }
+        
+        // ADMIN FUNCTIONS
+        function loadAdminProducts() {
+            fetch('/api/admin/products').then(res => res.json()).then(products => {
+                const container = document.getElementById('admin-products-list');
+                if (!products || products.length === 0) { container.innerHTML = '<p>No products.</p>'; return; }
+                container.innerHTML = `<div style="background:#184E6C; color:white; padding:0.5rem; border-radius:8px; margin-bottom:1rem;">🔐 ADMIN MODE - All Products</div><table><tr><th>ID</th><th>Image</th><th>Title</th><th>Price</th><th>Seller</th><th>Status</th><th>Action</th></tr>${products.map(p => `<tr><td>${p.id}</td><td>${p.image_url ? `<img src="${p.image_url}" class="product-img">` : '-'}</td><td>${escapeHtml(p.title)}</td><td>Nu. ${p.price.toLocaleString()}</td><td>${escapeHtml(p.seller_name || p.seller_email)}</td><td><span class="status-badge status-${p.status}">${p.status}</span></td><td><button class="btn-danger" onclick="adminDeleteProduct(${p.id})">Delete</button></td></tr>`).join('')}</table>`;
+            });
+        }
+        
+        function adminDeleteProduct(id) { if (confirm('Delete this product permanently?')) { fetch(`/api/admin/products/${id}`, { method: 'DELETE' }).then(() => loadAdminProducts()); } }
+        
+        function loadAdminUsers() {
+            fetch('/api/admin/users')
                 .then(res => res.json())
-                .then(orders => {
-                    const container = document.getElementById('seller-orders-list');
-                    if (!orders || orders.length === 0) {
-                        container.innerHTML = '<p>No orders received yet.</p>';
-                        return;
-                    }
+                .then(users => {
+                    const container = document.getElementById('admin-users-list');
+                    if (!users || users.length === 0) { container.innerHTML = '<p>No users.</p>'; return; }
                     container.innerHTML = `
-                        <table>
-                            <tr><th>Order ID</th><th>Buyer</th><th>Total</th><th>Status</th><th>Update Status</th></tr>
-                            ${orders.map(o => `
-                                <tr>
-                                    <td>#${o.id}</td>
-                                    <td>${o.buyer_name || o.buyer_email}</td>
-                                    <td>Nu. ${o.total.toLocaleString()}</td>
-                                    <td><span class="status-badge status-${o.status}">${o.status}</span></td>
-                                    <td>
-                                        <select onchange="updateOrderStatus(${o.id}, this.value)">
-                                            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                            <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                                            <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>Shipped</option>
-                                            <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                        <div style="background:#184E6C; color:white; padding:0.5rem; border-radius:8px; margin-bottom:1rem;">🔐 ADMIN MODE - Manage Users</div>
+                        <table style="width:100%; border-collapse:collapse;">
+                            <tr style="background:#DDECF6;">
+                                <th style="padding:0.75rem;">ID</th><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Actions</th>
+                            </tr>
+                            ${users.map(u => `
+                                <tr style="border-bottom:1px solid #DDECF6;">
+                                    <td style="padding:0.75rem;">${u.id}</td>
+                                    <td style="padding:0.75rem;">${escapeHtml(u.email)}</td>
+                                    <td style="padding:0.75rem;">${escapeHtml(u.full_name || '-')}</td>
+                                    <td style="padding:0.75rem;">
+                                        <select onchange="updateUserRole(${u.id}, this.value)">
+                                            <option value="buyer" ${u.role === 'buyer' ? 'selected' : ''}>Buyer</option>
+                                            <option value="seller" ${u.role === 'seller' ? 'selected' : ''}>Seller</option>
+                                            <option value="both" ${u.role === 'both' ? 'selected' : ''}>Both</option>
+                                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                                         </select>
+                                    </td>
+                                    <td style="padding:0.75rem;">
+                                        ${u.is_banned ? 
+                                            '<span class="status-badge status-banned">🔴 Banned</span>' : 
+                                            '<span class="status-badge status-active">🟢 Active</span>'}
+                                    </td>
+                                    <td style="padding:0.75rem;">
+                                        ${!u.is_banned ? 
+                                            `<button class="btn-warning" onclick="banUser(${u.id})">Ban</button>` : 
+                                            `<button class="btn-success" onclick="unbanUser(${u.id})">Unban</button>`}
+                                        <button class="btn-primary" onclick="sendMessageToUser(${u.id})">Message</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -314,120 +286,38 @@
                 });
         }
         
-        function updateOrderStatus(orderId, status) {
-            fetch(`/api/seller/orders/${orderId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: status })
-            }).then(() => loadSellerOrders());
-        }
+        function updateUserRole(userId, role) { fetch(`/api/admin/users/${userId}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: role }) }).then(() => loadAdminUsers()); }
         
-        // Load Cart
-        function loadCart() {
-            fetch('/api/cart')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('cart-items');
-                    const totalDiv = document.getElementById('cart-total');
-                    if (data.items && data.items.length) {
-                        container.innerHTML = `
-                            <table>
-                                <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr>
-                                ${data.items.map(item => `
-                                    <tr>
-                                        <td>${item.title}</td>
-                                        <td>Nu. ${item.price.toLocaleString()}</td>
-                                        <td>${item.quantity}</td>
-                                        <td>Nu. ${item.subtotal.toLocaleString()}</td>
-                                    </tr>
-                                `).join('')}
-                            </table>
-                        `;
-                        totalDiv.innerHTML = `<h3>Total: Nu. ${data.total.toLocaleString()}</h3><button class="btn-primary" onclick="checkout()">Proceed to Checkout</button>`;
-                    } else {
-                        container.innerHTML = '<p>Your cart is empty.</p>';
-                        totalDiv.innerHTML = '';
-                    }
-                });
-        }
+        function banUser(userId) { const reason = prompt('Reason for ban:'); if (reason) { fetch(`/api/admin/users/${userId}/ban`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reason }) }).then(() => { alert('User banned!'); loadAdminUsers(); }); } }
         
-        function checkout() {
-            const journal = prompt('Enter your bank transaction journal number:');
-            if (journal) {
-                fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ journal_number: journal })
-                }).then(() => {
-                    alert('Order placed successfully!');
-                    loadCart();
-                });
-            }
-        }
+        function unbanUser(userId) { if (confirm('Unban this user?')) { fetch(`/api/admin/users/${userId}/unban`, { method: 'POST' }).then(() => { alert('User unbanned!'); loadAdminUsers(); }); } }
         
-        // Image Upload
-        document.getElementById('productImage')?.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                document.getElementById('imagePreview').innerHTML = `<img src="${evt.target.result}" alt="Preview">`;
-            };
-            reader.readAsDataURL(file);
-            
-            const formData = new FormData();
-            formData.append('image', file);
-            fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                uploadedImageUrl = data.image_url;
-            })
-            .catch(err => console.error('Upload error:', err));
-        });
+        function sendMessageToUser(userId) { const subject = prompt('Subject:'); const message = prompt('Message:'); if (subject && message) { fetch(`/api/admin/users/${userId}/send-message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject: subject, message: message }) }).then(() => alert('Message sent!')); } }
         
-        // Submit Product Form
-        document.getElementById('product-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const product = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                price: parseFloat(document.getElementById('price').value),
-                condition: document.getElementById('condition').value,
-                image_url: uploadedImageUrl,
-                whatsapp_link: document.getElementById('whatsapp').value,
-                telegram_link: document.getElementById('telegram').value
-            };
-            
-            fetch('/api/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(product)
-            })
-            .then(res => res.json())
-            .then(() => {
-                alert('✅ Product listed successfully!');
-                document.getElementById('product-form').reset();
-                document.getElementById('imagePreview').innerHTML = '';
-                uploadedImageUrl = '';
-                showSection('my-products');
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                alert('Error listing product');
+        function loadAdminReports() {
+            fetch('/api/admin/reports').then(res => res.json()).then(reports => {
+                const container = document.getElementById('admin-reports-list');
+                if (!reports || reports.length === 0) { container.innerHTML = '<p>No reports.</p>'; return; }
+                container.innerHTML = `<div style="background:#184E6C; color:white; padding:0.5rem; border-radius:8px; margin-bottom:1rem;">🔐 ADMIN MODE - Product Reports</div><table><tr><th>Product</th><th>Reporter</th><th>Reason</th><th>Status</th><th>Action</th></tr>${reports.map(r => `<tr><td>${escapeHtml(r.product_title)}</td><td>${escapeHtml(r.reporter_email)}</td><td>${escapeHtml(r.reason)}</td><td><select onchange="updateReportStatus(${r.id}, this.value)"><option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pending</option><option value="reviewed" ${r.status === 'reviewed' ? 'selected' : ''}>Reviewed</option><option value="resolved" ${r.status === 'resolved' ? 'selected' : ''}>Resolved</option></select></td><td><button class="btn-danger" onclick="adminDeleteProduct(${r.product_id})">Delete Product</button></td></tr>`).join('')}</table>`;
             });
-        });
-        
-        function logout() {
-            fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/');
         }
         
-        // Default show my products
-        showSection('my-products');
+        function updateReportStatus(reportId, status) { fetch(`/api/admin/reports/${reportId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: status }) }).then(() => loadAdminReports()); }
+        
+        function logout() { fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/'); }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        // Account dropdown toggle
+document.querySelector('.dropdown-btn')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const content = document.querySelector('.dropdown-content');
+    content.style.display = content.style.display === 'block' ? 'none' : 'block';
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function() {
+    const content = document.querySelector('.dropdown-content');
+    if (content) content.style.display = 'none';
+});
     </script>
 </body>
 </html>

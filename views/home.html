@@ -4,30 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tshongmart - Marketplace</title>
+    <link rel="stylesheet" href="/static/css/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui; background: #DDECF6; }
-        .navbar { background: white; padding: 1rem; box-shadow: 0 2px 8px rgba(24,78,108,0.1); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-        .logo { font-size: 1.8rem; font-weight: bold; color: #184E6C; }
-        .logo span { color: #5BA3C6; }
-        .nav-links { display: flex; gap: 1.5rem; align-items: center; float: right; }
-        .nav-links a { text-decoration: none; color: #387EA2; }
-        .clearfix { clear: both; }
-        .hero { background: linear-gradient(135deg, #184E6C, #387EA2); color: white; padding: 3rem; border-radius: 16px; margin: 2rem 0; text-align: center; }
-        .btn-primary { background: #387EA2; color: white; padding: 0.6rem 1.5rem; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; display: inline-block; }
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
-        .product-card { background: white; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .product-card img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; }
-        .price { font-size: 1.5rem; font-weight: bold; color: #184E6C; margin: 0.5rem 0; }
-        .condition { display: inline-block; background: #DDECF6; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
-        .contact-links { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
-        .whatsapp-link { background: #25D366; color: white; padding: 0.3rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; display: inline-block; }
-        .telegram-link { background: #0088cc; color: white; padding: 0.3rem 0.8rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; display: inline-block; }
-        .loading, .error { text-align: center; padding: 2rem; }
-        .footer { background: #184E6C; color: #9BCBE5; padding: 2rem; margin-top: 2rem; text-align: center; }
-        button { background: #387EA2; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-        @media (max-width: 768px) { .product-grid { grid-template-columns: 1fr; } }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-btn {
+            background: #387EA2;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dropdown-btn:hover { background: #184E6C; }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: white;
+            min-width: 200px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .dropdown-content.show { display: block; }
+        .dropdown-content a {
+            display: block;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: #387EA2;
+        }
+        .dropdown-content a:hover { background: #DDECF6; }
+        .dropdown-content hr { margin: 0.2rem 0; }
     </style>
 </head>
 <body>
@@ -39,26 +53,20 @@
                 <a href="/products">Products</a>
                 <a href="/dashboard">Dashboard</a>
                 <a href="/contact">Contact</a>
-                <a href="/login">Login</a>
-                <a href="/register">Register</a>
+                <div class="dropdown" id="userDropdown">
+                    <button class="dropdown-btn" onclick="toggleUserDropdown()">👤 Account ▼</button>
+                    <div id="userDropdownContent" class="dropdown-content">
+                        <a href="/dashboard">Dashboard</a>
+                        <a href="/profile">Profile</a>
+                        <a href="/inbox">📬 Inbox</a>
+                        <hr>
+                        <a href="#" onclick="logout()" style="color:#dc3545;">Logout</a>
+                    </div>
+                </div>
             </div>
             <div class="clearfix"></div>
         </div>
     </div>
-    <!-- <div class="navbar">
-        <div class="container">
-            <div class="logo">Tshong<span>mart</span></div>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/products">Products</a>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/profile">Profile</a>
-                <a href="/contact">Contact</a>
-               <a href="#" onclick="logout()">Logout</a>
-            </div>
-            <div class="clearfix"></div>
-        </div>
-    </div> -->
 
     <div class="container">
         <div class="hero">
@@ -80,6 +88,23 @@
     </div>
 
     <script>
+        function toggleUserDropdown() {
+            const content = document.getElementById('userDropdownContent');
+            content.classList.toggle('show');
+        }
+        
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/');
+        }
+        
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('userDropdown');
+            const content = document.getElementById('userDropdownContent');
+            if (dropdown && !dropdown.contains(event.target)) {
+                content.classList.remove('show');
+            }
+        });
+        
         function loadProducts() {
             fetch('/api/products')
                 .then(response => response.json())

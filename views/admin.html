@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Tshongmart</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui; background: #DDECF6; }
+        .navbar { background: #184E6C; color: white; padding: 1rem; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; }
+        .logo { font-size: 1.8rem; font-weight: bold; }
+        .logo span { color: #5BA3C6; }
+        .nav-links { float: right; margin-top: 8px; }
+        .nav-links a { color: white; margin-left: 20px; text-decoration: none; }
+        .nav-links a:hover { color: #9BCBE5; }
+        .clearfix { clear: both; }
+        h1, h2 { color: #184E6C; margin: 1rem 0; }
+        .admin-grid { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; margin: 2rem 0; }
+        .sidebar { background: white; border-radius: 16px; padding: 1.5rem; height: fit-content; }
+        .sidebar h3 { color: #184E6C; margin-bottom: 1rem; }
+        .sidebar a { display: block; padding: 0.75rem; color: #387EA2; text-decoration: none; margin: 0.5rem 0; border-radius: 8px; cursor: pointer; }
+        .sidebar a:hover { background: #DDECF6; }
+        .content { background: white; border-radius: 16px; padding: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #DDECF6; }
+        th { background: #DDECF6; }
+        .btn-primary { background: #387EA2; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-success { background: #28a745; color: white; padding: 0.3rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .status-available { background: #28a745; color: white; }
+        .status-sold { background: #dc3545; color: white; }
+        input, select, textarea { width: 100%; padding: 0.5rem; margin: 0.5rem 0; border: 1px solid #9BCBE5; border-radius: 4px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-content { background: white; max-width: 600px; margin: 50px auto; padding: 2rem; border-radius: 16px; }
+        .footer { background: #184E6C; color: #9BCBE5; text-align: center; padding: 1rem; margin-top: 2rem; }
+        .product-img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="container">
+            <div class="logo">Tshongmart <span>Admin</span></div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/admin">Admin</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Admin Control Panel</h1>
+        <div class="admin-grid">
+            <div class="sidebar">
+                <h3>Admin Menu</h3>
+                <a onclick="showSection('products')">📦 All Products</a>
+                <a onclick="showSection('add-product')">➕ Add Product</a>
+                <a onclick="showSection('users')">👥 Manage Users</a>
+            </div>
+            <div class="content">
+                <!-- Products Section -->
+                <div id="products-section">
+                    <h2>All Products (All Sellers)</h2>
+                    <div id="products-list">Loading...</div>
+                </div>
+                
+                <!-- Add Product Section -->
+                <div id="add-product-section" style="display:none;">
+                    <h2>Add New Product</h2>
+                    <form id="admin-product-form">
+                        <div class="form-row">
+                            <input type="text" id="title" placeholder="Product Title" required>
+                            <input type="number" id="price" placeholder="Price (Nu.)" required>
+                        </div>
+                        <textarea id="description" placeholder="Description" rows="3"></textarea>
+                        <div class="form-row">
+                            <input type="text" id="condition" placeholder="Condition">
+                            <select id="status">
+                                <option value="available">Available</option>
+                                <option value="sold">Sold</option>
+                            </select>
+                        </div>
+                        <input type="text" id="image_url" placeholder="Image URL (optional)">
+                        <div class="form-row">
+                            <input type="text" id="whatsapp" placeholder="WhatsApp Link">
+                            <input type="text" id="telegram" placeholder="Telegram Link">
+                        </div>
+                        <select id="seller_id">
+                            <option value="0">-- Admin as seller --</option>
+                        </select>
+                        <button type="submit" class="btn-primary">Create Product</button>
+                    </form>
+                </div>
+                
+                <!-- Users Section -->
+                <div id="users-section" style="display:none;">
+                    <h2>All Users</h2>
+                    <div id="users-list">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Product</h3>
+            <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="edit-title" placeholder="Title" required>
+                <textarea id="edit-description" placeholder="Description" rows="3"></textarea>
+                <div class="form-row">
+                    <input type="number" id="edit-price" placeholder="Price" required>
+                    <input type="text" id="edit-condition" placeholder="Condition">
+                </div>
+                <input type="text" id="edit-image_url" placeholder="Image URL">
+                <div class="form-row">
+                    <select id="edit-status">
+                        <option value="available">Available</option>
+                        <option value="sold">Sold</option>
+                    </select>
+                    <select id="edit-seller_id"></select>
+                </div>
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <button type="button" onclick="closeModal()" class="btn-danger">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container">
+            <p>&copy; 2024 Tshongmart Admin Panel</p>
+        </div>
+    </div>
+
+    <script>
+        let allUsers = [];
+
+        function showSection(section) {
+            document.getElementById('products-section').style.display = 'none';
+            document.getElementById('add-product-section').style.display = 'none';
+            document.getElementById('users-section').style.display = 'none';
+            document.getElementById(`${section}-section`).style.display = 'block';
+            if (section === 'products') loadAllProducts();
+            if (section === 'users') loadAllUsers();
+        }
+
+        function loadAllProducts() {
+            fetch('/api/admin/products')
+                .then(res => res.json())
+                .then(products => {
+                    const container = document.getElementById('products-list');
+                    if (!products || products.length === 0) {
+                        container.innerHTML = '<p>No products found.</p>';
+                        return;
+                    }
+                    container.innerHTML = `
+                        <table>
+                            <tr><th>ID</th><th>Image</th><th>Title</th><th>Price</th><th>Seller</th><th>Status</th><th>Actions</th></tr>
+                            ${products.map(p => `
+                                <tr>
+                                    <td>${p.id}</td>
+                                    <td>${p.image_url ? '<img src="'+p.image_url+'" class="product-img">' : '-'}</td>
+                                    <td>${escapeHtml(p.title)}</td>
+                                    <td>Nu. ${p.price.toLocaleString()}</td>
+                                    <td>${escapeHtml(p.seller_name || p.seller_email)}</td>
+                                    <td><span class="status-badge status-${p.status}">${p.status}</span></td>
+                                    <td>
+                                        <button class="btn-primary" onclick="editProduct(${p.id})">Edit</button>
+                                        <button class="btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    `;
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    document.getElementById('products-list').innerHTML = '<p>Error loading products. Make sure you are logged in as admin.</p>';
+                });
+        }
+
+        function loadAllUsers() {
+            fetch('/api/admin/users')
+                .then(res => res.json())
+                .then(users => {
+                    allUsers = users;
+                    const container = document.getElementById('users-list');
+                    if (!users || users.length === 0) {
+                        container.innerHTML = '<p>No users found.</p>';
+                        return;
+                    }
+                    container.innerHTML = `
+                        <table>
+                            <tr><th>ID</th><th>Email</th><th>Name</th><th>Phone</th><th>Role</th><th>Action</th></tr>
+                            ${users.map(u => `
+                                <tr>
+                                    <td>${u.id}</td>
+                                    <td>${escapeHtml(u.email)}</td>
+                                    <td>${escapeHtml(u.full_name || '-')}</td>
+                                    <td>${escapeHtml(u.phone || '-')}</td>
+                                    <td>
+                                        <select onchange="updateUserRole(${u.id}, this.value)">
+                                            <option value="buyer" ${u.role === 'buyer' ? 'selected' : ''}>Buyer</option>
+                                            <option value="seller" ${u.role === 'seller' ? 'selected' : ''}>Seller</option>
+                                            <option value="both" ${u.role === 'both' ? 'selected' : ''}>Both</option>
+                                            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        </select>
+                                    </td>
+                                    <td><button class="btn-danger" onclick="deleteUser(${u.id})">Delete</button></td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    `;
+                });
+        }
+
+        function updateUserRole(userId, role) {
+            fetch(`/api/admin/users/${userId}/role`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: role })
+            }).then(() => loadAllUsers());
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Delete this product permanently?')) {
+                fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+                    .then(() => loadAllProducts());
+            }
+        }
+
+        function editProduct(id) {
+            fetch(`/api/product/${id}`)
+                .then(res => res.json())
+                .then(product => {
+                    document.getElementById('edit-id').value = product.id;
+                    document.getElementById('edit-title').value = product.title;
+                    document.getElementById('edit-description').value = product.description || '';
+                    document.getElementById('edit-price').value = product.price;
+                    document.getElementById('edit-condition').value = product.condition || '';
+                    document.getElementById('edit-image_url').value = product.image_url || '';
+                    document.getElementById('edit-status').value = product.status || 'available';
+                    
+                    // Load sellers for dropdown
+                    fetch('/api/admin/users')
+                        .then(res => res.json())
+                        .then(users => {
+                            const sellerSelect = document.getElementById('edit-seller_id');
+                            sellerSelect.innerHTML = users.map(u => `<option value="${u.id}" ${u.id === product.seller_id ? 'selected' : ''}>${u.email} (${u.role})</option>`).join('');
+                        });
+                    
+                    document.getElementById('editModal').style.display = 'block';
+                });
+        }
+
+        document.getElementById('edit-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                title: document.getElementById('edit-title').value,
+                description: document.getElementById('edit-description').value,
+                price: parseFloat(document.getElementById('edit-price').value),
+                condition: document.getElementById('edit-condition').value,
+                image_url: document.getElementById('edit-image_url').value,
+                status: document.getElementById('edit-status').value,
+                seller_id: parseInt(document.getElementById('edit-seller_id').value)
+            };
+            fetch(`/api/admin/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                closeModal();
+                loadAllProducts();
+            });
+        });
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Load sellers for add product form
+        fetch('/api/admin/users')
+            .then(res => res.json())
+            .then(users => {
+                const sellerSelect = document.getElementById('seller_id');
+                sellerSelect.innerHTML = '<option value="0">-- Admin as seller --</option>' + 
+                    users.filter(u => u.role === 'seller' || u.role === 'both' || u.role === 'admin')
+                        .map(u => `<option value="${u.id}">${escapeHtml(u.email)} (${u.role})</option>`).join('');
+            });
+
+        document.getElementById('admin-product-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                price: parseFloat(document.getElementById('price').value),
+                condition: document.getElementById('condition').value,
+                image_url: document.getElementById('image_url').value,
+                whatsapp_link: document.getElementById('whatsapp').value,
+                telegram_link: document.getElementById('telegram').value,
+                status: document.getElementById('status').value,
+                seller_id: parseInt(document.getElementById('seller_id').value) || 0
+            };
+            fetch('/api/admin/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                alert('Product created successfully!');
+                document.getElementById('admin-product-form').reset();
+                showSection('products');
+            }).catch(err => {
+                alert('Error creating product');
+                console.error(err);
+            });
+        });
+
+        function logout() {
+            fetch('/logout', { method: 'POST' }).then(() => window.location.href = '/');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Start with products view
+        showSection('products');
+    </script>
+</body>
+</html>

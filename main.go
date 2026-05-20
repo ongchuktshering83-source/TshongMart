@@ -54,38 +54,67 @@ r.HandleFunc("/api/products", GetProductsAPI(db)).Methods("GET")
 r.HandleFunc("/api/products", CreateProduct(db)).Methods("POST")
 r.HandleFunc("/api/product/{id}", GetProductAPI(db)).Methods("GET")
 
-// API routes - Cart
-r.HandleFunc("/api/cart", GetCartHandler(db)).Methods("GET")
-r.HandleFunc("/api/cart/add", AddToCartHandler(db)).Methods("POST")
-r.HandleFunc("/api/cart/update", UpdateCartQuantity(db)).Methods("PUT")
-r.HandleFunc("/api/cart/remove", RemoveFromCart(db)).Methods("DELETE")
-r.HandleFunc("/api/cart/save-for-later", SaveForLater(db)).Methods("POST")
-r.HandleFunc("/api/saved-items", GetSavedItems(db)).Methods("GET")
-r.HandleFunc("/api/move-to-cart", MoveToCart(db)).Methods("POST")
+// API routes - Cart (Protected - with ban check)
+r.HandleFunc("/api/cart", checkBanned(db, GetCartHandler(db))).Methods("GET")
+r.HandleFunc("/api/cart/add", checkBanned(db, AddToCartHandler(db))).Methods("POST")
+r.HandleFunc("/api/cart/update", checkBanned(db, UpdateCartQuantity(db))).Methods("PUT")
+r.HandleFunc("/api/cart/remove", checkBanned(db, RemoveFromCart(db))).Methods("DELETE")
+r.HandleFunc("/api/cart/save-for-later", checkBanned(db, SaveForLater(db))).Methods("POST")
+r.HandleFunc("/api/saved-items", checkBanned(db, GetSavedItems(db))).Methods("GET")
+r.HandleFunc("/api/move-to-cart", checkBanned(db, MoveToCart(db))).Methods("POST")
 
-// API routes - Checkout & Orders
-r.HandleFunc("/api/checkout", CheckoutHandler(db)).Methods("POST")
+// API routes - Checkout & Orders (Protected)
+r.HandleFunc("/api/checkout", checkBanned(db, CheckoutHandler(db))).Methods("POST")
 
-// API routes - Profile (Fixed - no duplicates)
-r.HandleFunc("/api/user/profile", GetUserProfile(db)).Methods("GET")
-r.HandleFunc("/api/user/profile", UpdateUserProfile(db)).Methods("PUT")
-r.HandleFunc("/api/user/change-password", ChangePassword(db)).Methods("POST")
-r.HandleFunc("/api/user/upload-avatar", UploadAvatarHandler(db)).Methods("POST")
+// API routes - Profile (Protected)
+r.HandleFunc("/api/user/profile", checkBanned(db, GetUserProfile(db))).Methods("GET")
+r.HandleFunc("/api/user/profile", checkBanned(db, UpdateUserProfile(db))).Methods("PUT")
+r.HandleFunc("/api/user/change-password", checkBanned(db, ChangePassword(db))).Methods("POST")
+r.HandleFunc("/api/user/upload-avatar", checkBanned(db, UploadAvatarHandler(db))).Methods("POST")
 
-// API routes - Upload (Fixed - added db parameter)
-r.HandleFunc("/api/upload", UploadImageHandler(db)).Methods("POST")
+// API routes - Upload (Protected)
+r.HandleFunc("/api/upload", checkBanned(db, UploadImageHandler(db))).Methods("POST")
 
-// Seller routes
-r.HandleFunc("/api/seller/products", GetSellerProducts(db)).Methods("GET")
-r.HandleFunc("/api/seller/products/{id}", UpdateProduct(db)).Methods("PUT")
-r.HandleFunc("/api/seller/products/{id}", DeleteProduct(db)).Methods("DELETE")
-r.HandleFunc("/api/seller/products/{id}/status", UpdateProductStatus(db)).Methods("PUT")
-r.HandleFunc("/api/seller/orders", GetSellerOrders(db)).Methods("GET")
+// Seller routes (Protected)
+r.HandleFunc("/api/seller/products", checkBanned(db, GetSellerProducts(db))).Methods("GET")
+r.HandleFunc("/api/seller/products/{id}", checkBanned(db, UpdateProduct(db))).Methods("PUT")
+r.HandleFunc("/api/seller/products/{id}", checkBanned(db, DeleteProduct(db))).Methods("DELETE")
+r.HandleFunc("/api/seller/products/{id}/status", checkBanned(db, UpdateProductStatus(db))).Methods("PUT")
+r.HandleFunc("/api/seller/orders", checkBanned(db, GetSellerOrders(db))).Methods("GET")
 
-// Buyer order routes
-r.HandleFunc("/api/my-orders", GetMyOrders(db)).Methods("GET")
-r.HandleFunc("/api/orders/{id}/track", TrackOrder(db)).Methods("GET")
-r.HandleFunc("/api/orders/{id}/cancel", CancelOrder(db)).Methods("POST")
+// Buyer order routes (Protected)
+r.HandleFunc("/api/my-orders", checkBanned(db, GetMyOrders(db))).Methods("GET")
+r.HandleFunc("/api/orders/{id}/track", checkBanned(db, TrackOrder(db))).Methods("GET")
+r.HandleFunc("/api/orders/{id}/cancel", checkBanned(db, CancelOrder(db))).Methods("POST")
+
+// Messaging routes (Protected - but banned users can still message admin)
+// Note: These are NOT wrapped with ban check so banned users can contact admin
+r.HandleFunc("/api/messages", GetMessages(db)).Methods("GET")
+r.HandleFunc("/api/messages", SendMessage(db)).Methods("POST")
+r.HandleFunc("/api/messages/{id}/read", MarkMessageRead(db)).Methods("PUT")
+r.HandleFunc("/api/messages/unread-count", GetUnreadCount(db)).Methods("GET")
+
+// Report routes (Protected)
+r.HandleFunc("/api/reports", checkBanned(db, CreateReport(db))).Methods("POST")
+
+// Admin routes (No ban check for admin endpoints - admins can work even if banned? 
+// Actually admins shouldn't be banned, but keep these without ban check)
+r.HandleFunc("/admin", AdminHandler(db)).Methods("GET")
+r.HandleFunc("/api/admin/products", AdminGetAllProducts(db)).Methods("GET")
+r.HandleFunc("/api/admin/products/{id}", AdminDeleteProduct(db)).Methods("DELETE")
+r.HandleFunc("/api/admin/products/{id}", AdminUpdateProduct(db)).Methods("PUT")
+r.HandleFunc("/api/admin/products", AdminCreateProduct(db)).Methods("POST")
+r.HandleFunc("/api/admin/users", AdminGetAllUsers(db)).Methods("GET")
+r.HandleFunc("/api/admin/users/{id}/role", AdminUpdateUserRole(db)).Methods("PUT")
+r.HandleFunc("/api/admin/users/{id}/reset-password", AdminResetPassword(db)).Methods("POST")
+r.HandleFunc("/api/admin/users/{id}/ban", BanUser(db)).Methods("POST")
+r.HandleFunc("/api/admin/users/{id}/unban", UnbanUser(db)).Methods("POST")
+r.HandleFunc("/api/admin/users/{id}/send-message", AdminSendMessage(db)).Methods("POST")
+r.HandleFunc("/api/admin/reports", GetReports(db)).Methods("GET")
+r.HandleFunc("/api/admin/reports/{id}", UpdateReportStatus(db)).Methods("PUT")
+
+// Inbox page
+r.HandleFunc("/inbox", InboxHandler).Methods("GET")
 
 log.Println("✅ Tshongmart Server running at http://localhost:8080")
 log.Fatal(http.ListenAndServe(":8080", r))
@@ -213,8 +242,19 @@ func createTables(db *sql.DB) {
 
 // Page Handlers
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+    // Check if user is logged in
+    session, _ := store.Get(r, "session")
+    userID, ok := session.Values["user_id"].(int)
+    
+    if ok && userID > 0 {
+        // User is logged in - show dashboard
+        http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+        return
+    }
+    
+    // User is not logged in - show landing page
     w.Header().Set("Content-Type", "text/html")
-    http.ServeFile(w, r, "./views/home.html")
+    http.ServeFile(w, r, "./views/index.html")
 }
 
 func ProductsHandler(w http.ResponseWriter, r *http.Request) {
@@ -242,26 +282,69 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
     }
 }
 
+// Check if user is admin
+func isAdmin(db *sql.DB, userID int) bool {
+    var role string
+    err := db.QueryRow("SELECT role FROM users WHERE id = ?", userID).Scan(&role)
+    if err != nil {
+        return false
+    }
+    return role == "admin" || role == "both"
+}
+
 func GetProductsAPI(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
         
-        // Query including image_url
-        rows, err := db.Query(`
-            SELECT 
-                id, 
-                title, 
-                COALESCE(description, ''), 
-                price, 
-                COALESCE(condition, ''), 
-                COALESCE(image_url, ''), 
-                COALESCE(whatsapp_link, ''), 
-                COALESCE(telegram_link, '')
-            FROM products
-            ORDER BY created_at DESC
-        `)
-        if err != nil {
-            log.Printf("Database query error: %v", err)
+        // Get logged-in user ID (if any)
+        var currentUserID int
+        session, err := store.Get(r, "session")
+        if err == nil {
+            if uid, ok := session.Values["user_id"].(int); ok {
+                currentUserID = uid
+            }
+        }
+        
+        // Query: Exclude products from the current user and only show 'available' products
+        var rows *sql.Rows
+        var queryErr error
+        
+        if currentUserID > 0 {
+            // User is logged in - exclude their own products
+            rows, queryErr = db.Query(`
+                SELECT 
+                    id, 
+                    title, 
+                    COALESCE(description, ''), 
+                    price, 
+                    COALESCE(condition, ''), 
+                    COALESCE(image_url, ''), 
+                    COALESCE(whatsapp_link, ''), 
+                    COALESCE(telegram_link, '')
+                FROM products
+                WHERE (seller_id != ? OR seller_id IS NULL) AND (status = 'available' OR status IS NULL)
+                ORDER BY created_at DESC
+            `, currentUserID)
+        } else {
+            // User is not logged in - show all available products
+            rows, queryErr = db.Query(`
+                SELECT 
+                    id, 
+                    title, 
+                    COALESCE(description, ''), 
+                    price, 
+                    COALESCE(condition, ''), 
+                    COALESCE(image_url, ''), 
+                    COALESCE(whatsapp_link, ''), 
+                    COALESCE(telegram_link, '')
+                FROM products
+                WHERE status = 'available' OR status IS NULL
+                ORDER BY created_at DESC
+            `)
+        }
+        
+        if queryErr != nil {
+            log.Printf("Database query error: %v", queryErr)
             http.Error(w, `{"error": "Database query failed"}`, 500)
             return
         }
@@ -297,7 +380,7 @@ func GetProductsAPI(db *sql.DB) http.HandlerFunc {
             products = []map[string]interface{}{}
         }
 
-        log.Printf("Returning %d products with images", len(products))
+        log.Printf("Returning %d products for public view", len(products))
         json.NewEncoder(w).Encode(products)
     }
 }
@@ -309,24 +392,41 @@ func GetProductAPI(db *sql.DB) http.HandlerFunc {
         
         w.Header().Set("Content-Type", "application/json")
 
+        // Get logged-in user ID
+        var currentUserID int
+        session, err := store.Get(r, "session")
+        if err == nil {
+            if uid, ok := session.Values["user_id"].(int); ok {
+                currentUserID = uid
+            }
+        }
+
         var productID int
+        var sellerID int
         var title, description, condition, imageUrl, whatsapp, telegram, sellerName string
         var price float64
+        var status string
 
-        err := db.QueryRow(`
-            SELECT p.id, p.title, p.description, p.price, p.condition, 
-                   p.image_url, 
-                   p.whatsapp_link, 
-                   p.telegram_link, 
+        err = db.QueryRow(`
+            SELECT p.id, p.seller_id, p.title, p.description, p.price, p.condition, 
+                   p.image_url, p.whatsapp_link, p.telegram_link, 
+                   COALESCE(p.status, 'available'),
                    COALESCE(u.full_name, 'Unknown')
             FROM products p
             LEFT JOIN users u ON p.seller_id = u.id
             WHERE p.id = ?
-        `, id).Scan(&productID, &title, &description, &price, &condition, &imageUrl, &whatsapp, &telegram, &sellerName)
+        `, id).Scan(&productID, &sellerID, &title, &description, &price, &condition, 
+                    &imageUrl, &whatsapp, &telegram, &status, &sellerName)
 
         if err != nil {
             log.Printf("Product not found: %v", err)
             http.Error(w, `{"error": "Product not found"}`, 404)
+            return
+        }
+
+        // If product is not available, only show to the seller
+        if status != "available" && sellerID != currentUserID {
+            http.Error(w, `{"error": "Product not available"}`, 404)
             return
         }
 
@@ -340,6 +440,8 @@ func GetProductAPI(db *sql.DB) http.HandlerFunc {
             "whatsapp":    whatsapp,
             "telegram":    telegram,
             "seller":      sellerName,
+            "status":      status,
+            "is_owner":    sellerID == currentUserID,
         }
 
         if err := json.NewEncoder(w).Encode(product); err != nil {
@@ -375,9 +477,10 @@ func CreateProduct(db *sql.DB) http.HandlerFunc {
 
         log.Printf("Creating product: Title=%s, Price=%f, ImageUrl=%s", product.Title, product.Price, product.ImageUrl)
 
+        // Set default status to 'available'
         _, err := db.Exec(`
-            INSERT INTO products (seller_id, title, description, price, condition, image_url, whatsapp_link, telegram_link)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products (seller_id, title, description, price, condition, image_url, whatsapp_link, telegram_link, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available')
         `, userID, product.Title, product.Description, product.Price, product.Condition, product.ImageUrl, product.WhatsappLink, product.TelegramLink)
 
         if err != nil {
@@ -390,6 +493,7 @@ func CreateProduct(db *sql.DB) http.HandlerFunc {
         json.NewEncoder(w).Encode(map[string]string{"status": "product created"})
     }
 }
+
 func AddToCartHandler(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         var req struct {
@@ -409,9 +513,30 @@ func AddToCartHandler(db *sql.DB) http.HandlerFunc {
             req.Quantity = 1
         }
 
+        // Check if the user is trying to buy their own product
+        var sellerID int
+        err := db.QueryRow("SELECT seller_id FROM products WHERE id = ?", req.ProductID).Scan(&sellerID)
+        if err != nil {
+            http.Error(w, "Product not found", 404)
+            return
+        }
+
+        if sellerID == userID {
+            http.Error(w, "You cannot buy your own product", 400)
+            return
+        }
+
+        // Check if product is available
+        var status string
+        db.QueryRow("SELECT COALESCE(status, 'available') FROM products WHERE id = ?", req.ProductID).Scan(&status)
+        if status == "sold" {
+            http.Error(w, "This product is already sold", 400)
+            return
+        }
+
         // Check if item already in cart
         var existingID int
-        err := db.QueryRow("SELECT id FROM carts WHERE user_id = ? AND product_id = ?", userID, req.ProductID).Scan(&existingID)
+        err = db.QueryRow("SELECT id FROM carts WHERE user_id = ? AND product_id = ?", userID, req.ProductID).Scan(&existingID)
         if err == nil {
             // Update existing
             db.Exec("UPDATE carts SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?", req.Quantity, userID, req.ProductID)
@@ -718,14 +843,18 @@ func GetUserProfile(db *sql.DB) http.HandlerFunc {
             Role      string  `json:"role"`
             AvatarUrl string  `json:"avatar_url"`
             CreatedAt string  `json:"created_at"`
+            IsBanned  int     `json:"is_banned"`
+            BanReason string  `json:"ban_reason"`
         }
 
         err := db.QueryRow(`
             SELECT id, email, COALESCE(full_name, ''), COALESCE(phone, ''), 
                    COALESCE(role, 'buyer'), COALESCE(avatar_url, ''), 
-                   COALESCE(created_at, datetime('now'))
+                   COALESCE(created_at, datetime('now')),
+                   COALESCE(is_banned, 0), COALESCE(ban_reason, '')
             FROM users WHERE id = ?
-        `, userID).Scan(&user.ID, &user.Email, &user.FullName, &user.Phone, &user.Role, &user.AvatarUrl, &user.CreatedAt)
+        `, userID).Scan(&user.ID, &user.Email, &user.FullName, &user.Phone, 
+            &user.Role, &user.AvatarUrl, &user.CreatedAt, &user.IsBanned, &user.BanReason)
 
         if err != nil {
             http.Error(w, "User not found", 404)
@@ -794,8 +923,17 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
         fullName := r.FormValue("full_name")
         phone := r.FormValue("phone")
         role := r.FormValue("role")
+        
+        // Check for admin secret code
+        adminCode := r.FormValue("admin_code")
         if role == "" {
             role = "buyer"
+        }
+        
+        // If admin code matches, set role to admin
+        // Change "YOUR_SECRET_CODE" to whatever code you want
+        if adminCode == "TSHONG_ADMIN_2024" {
+            role = "admin"
         }
 
         hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -1400,4 +1538,701 @@ func SellerDashboardHandler(w http.ResponseWriter, r *http.Request) {
     _ = userID
     w.Header().Set("Content-Type", "text/html")
     http.ServeFile(w, r, "./views/seller-dashboard.html")
+}
+
+// Admin: Get all products (including sold, from all sellers)
+func AdminGetAllProducts(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        
+        rows, err := db.Query(`
+            SELECT p.id, p.title, p.description, p.price, p.condition, 
+                   COALESCE(p.image_url, ''), COALESCE(p.status, 'available'),
+                   COALESCE(u.full_name, 'Unknown'), u.email, p.created_at
+            FROM products p
+            LEFT JOIN users u ON p.seller_id = u.id
+            ORDER BY p.created_at DESC
+        `)
+        
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        defer rows.Close()
+
+        var products []map[string]interface{}
+        for rows.Next() {
+            var id int
+            var title, description, condition, imageUrl, status, sellerName, sellerEmail, createdAt string
+            var price float64
+            
+            rows.Scan(&id, &title, &description, &price, &condition, &imageUrl, &status, &sellerName, &sellerEmail, &createdAt)
+
+            products = append(products, map[string]interface{}{
+                "id":          id,
+                "title":       title,
+                "description": description,
+                "price":       price,
+                "condition":   condition,
+                "image_url":   imageUrl,
+                "status":      status,
+                "seller_name": sellerName,
+                "seller_email": sellerEmail,
+                "created_at":  createdAt,
+            })
+        }
+
+        json.NewEncoder(w).Encode(products)
+    }
+}
+
+// Admin: Delete any product
+func AdminDeleteProduct(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        vars := mux.Vars(r)
+        productID := vars["id"]
+
+        result, err := db.Exec("DELETE FROM products WHERE id = ?", productID)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        rowsAffected, _ := result.RowsAffected()
+        if rowsAffected == 0 {
+            http.Error(w, "Product not found", 404)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "product deleted"})
+    }
+}
+
+// Admin: Update any product
+func AdminUpdateProduct(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        vars := mux.Vars(r)
+        productID := vars["id"]
+
+        var req struct {
+            Title       string  `json:"title"`
+            Description string  `json:"description"`
+            Price       float64 `json:"price"`
+            Condition   string  `json:"condition"`
+            ImageUrl    string  `json:"image_url"`
+            Status      string  `json:"status"`
+            SellerID    int     `json:"seller_id"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            http.Error(w, "Invalid request", 400)
+            return
+        }
+
+        _, err := db.Exec(`
+            UPDATE products 
+            SET title = ?, description = ?, price = ?, condition = ?, 
+                image_url = ?, status = ?, seller_id = ?
+            WHERE id = ?
+        `, req.Title, req.Description, req.Price, req.Condition, 
+           req.ImageUrl, req.Status, req.SellerID, productID)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "product updated"})
+    }
+}
+
+// Admin: Create product (as any seller or as admin)
+func AdminCreateProduct(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        var req struct {
+            Title        string  `json:"title"`
+            Description  string  `json:"description"`
+            Price        float64 `json:"price"`
+            Condition    string  `json:"condition"`
+            ImageUrl     string  `json:"image_url"`
+            WhatsappLink string  `json:"whatsapp_link"`
+            TelegramLink string  `json:"telegram_link"`
+            SellerID     int     `json:"seller_id"` // Admin can assign to any seller
+            Status       string  `json:"status"`
+        }
+
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            http.Error(w, "Invalid request", 400)
+            return
+        }
+
+        sellerID := req.SellerID
+        if sellerID == 0 {
+            sellerID = userID // Use admin as seller if not specified
+        }
+
+        if req.Status == "" {
+            req.Status = "available"
+        }
+
+        _, err := db.Exec(`
+            INSERT INTO products (seller_id, title, description, price, condition, 
+                                  image_url, whatsapp_link, telegram_link, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, sellerID, req.Title, req.Description, req.Price, req.Condition,
+           req.ImageUrl, req.WhatsappLink, req.TelegramLink, req.Status)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "product created"})
+    }
+}
+
+// Admin: Get all users
+func AdminGetAllUsers(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        
+        rows, err := db.Query(`
+            SELECT id, email, COALESCE(full_name, ''), COALESCE(phone, ''), 
+                   role, created_at, COALESCE(is_banned, 0) as is_banned, COALESCE(ban_reason, '')
+            FROM users
+            ORDER BY created_at DESC
+        `)
+        
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        defer rows.Close()
+
+        var users []map[string]interface{}
+        for rows.Next() {
+            var id int
+            var email, fullName, phone, role, createdAt, banReason string
+            var isBanned int
+            rows.Scan(&id, &email, &fullName, &phone, &role, &createdAt, &isBanned, &banReason)
+
+            users = append(users, map[string]interface{}{
+                "id":         id,
+                "email":      email,
+                "full_name":  fullName,
+                "phone":      phone,
+                "role":       role,
+                "created_at": createdAt,
+                "is_banned":  isBanned == 1,
+                "ban_reason": banReason,
+            })
+        }
+
+        json.NewEncoder(w).Encode(users)
+    }
+}
+
+// Admin: Update user role
+func AdminUpdateUserRole(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized - Admin access required", 403)
+            return
+        }
+
+        vars := mux.Vars(r)
+        targetUserID := vars["id"]
+
+        var req struct {
+            Role string `json:"role"`
+        }
+        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+            http.Error(w, "Invalid request", 400)
+            return
+        }
+
+        // Validate role
+        validRoles := map[string]bool{"buyer": true, "seller": true, "both": true, "admin": true}
+        if !validRoles[req.Role] {
+            http.Error(w, "Invalid role", 400)
+            return
+        }
+
+        _, err := db.Exec("UPDATE users SET role = ? WHERE id = ?", req.Role, targetUserID)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "user role updated"})
+    }
+}
+
+func AdminHandler(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Redirect(w, r, "/login", http.StatusSeeOther)
+            return
+        }
+        w.Header().Set("Content-Type", "text/html")
+        http.ServeFile(w, r, "./views/admin.html")
+    }
+}
+
+// Admin: Reset user password
+func AdminResetPassword(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        userID := vars["id"]
+        
+        session, _ := store.Get(r, "session")
+        adminID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, adminID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+        
+        var req struct {
+            Password string `json:"password"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+        
+        hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        
+        _, err := db.Exec("UPDATE users SET password_hash = ? WHERE id = ?", string(hashedPassword), userID)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        
+        json.NewEncoder(w).Encode(map[string]string{"status": "password reset"})
+    }
+}
+
+// Get user's messages (inbox)
+func GetMessages(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok {
+            http.Error(w, "Unauthorized", 401)
+            return
+        }
+
+        rows, err := db.Query(`
+            SELECT m.id, m.from_user_id, m.to_user_id, m.subject, m.message, 
+                   m.is_read, m.created_at, 
+                   COALESCE(u_from.email, 'System') as from_email,
+                   COALESCE(u_from.full_name, 'Admin') as from_name
+            FROM messages m
+            LEFT JOIN users u_from ON m.from_user_id = u_from.id
+            WHERE m.to_user_id = ? OR m.from_user_id = ?
+            ORDER BY m.created_at DESC
+        `, userID, userID)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        defer rows.Close()
+
+        var messages []map[string]interface{}
+        for rows.Next() {
+            var id, fromUserID, toUserID, isRead int
+            var subject, message, createdAt, fromEmail, fromName string
+            rows.Scan(&id, &fromUserID, &toUserID, &subject, &message, &isRead, &createdAt, &fromEmail, &fromName)
+
+            messages = append(messages, map[string]interface{}{
+                "id":          id,
+                "from_user_id": fromUserID,
+                "to_user_id":   toUserID,
+                "subject":      subject,
+                "message":      message,
+                "is_read":      isRead == 1,
+                "created_at":   createdAt,
+                "from_email":   fromEmail,
+                "from_name":    fromName,
+                "is_admin":     fromUserID == 1, // Assuming admin has ID 1
+            })
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(messages)
+    }
+}
+
+// Send a message
+func SendMessage(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok {
+            http.Error(w, "Unauthorized", 401)
+            return
+        }
+
+        var req struct {
+            ToUserID int    `json:"to_user_id"`
+            Subject  string `json:"subject"`
+            Message  string `json:"message"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+
+        // Find admin user (role = admin)
+        var adminID int
+        err := db.QueryRow("SELECT id FROM users WHERE role = 'admin' LIMIT 1").Scan(&adminID)
+        if err != nil {
+            adminID = 1 // Fallback
+        }
+
+        toID := req.ToUserID
+        if toID == 0 {
+            toID = adminID // Send to admin by default
+        }
+
+        _, err = db.Exec(`
+            INSERT INTO messages (from_user_id, to_user_id, subject, message)
+            VALUES (?, ?, ?, ?)
+        `, userID, toID, req.Subject, req.Message)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "message sent"})
+    }
+}
+
+// Mark message as read
+func MarkMessageRead(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        messageID := vars["id"]
+
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok {
+            http.Error(w, "Unauthorized", 401)
+            return
+        }
+
+        _, err := db.Exec("UPDATE messages SET is_read = 1 WHERE id = ? AND to_user_id = ?", messageID, userID)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "marked read"})
+    }
+}
+
+// Get unread message count
+func GetUnreadCount(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok {
+            http.Error(w, "Unauthorized", 401)
+            return
+        }
+
+        var count int
+        db.QueryRow("SELECT COUNT(*) FROM messages WHERE to_user_id = ? AND is_read = 0", userID).Scan(&count)
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]int{"unread_count": count})
+    }
+}
+
+// Create a report for fake product
+func CreateReport(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok {
+            http.Error(w, "Unauthorized", 401)
+            return
+        }
+
+        var req struct {
+            ProductID int    `json:"product_id"`
+            Reason    string `json:"reason"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+
+        _, err := db.Exec(`
+            INSERT INTO reports (reporter_id, product_id, reason)
+            VALUES (?, ?, ?)
+        `, userID, req.ProductID, req.Reason)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "report submitted"})
+    }
+}
+
+// Admin: Get all reports
+func GetReports(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+
+        rows, err := db.Query(`
+            SELECT r.id, r.reason, r.status, r.created_at,
+                   u.email as reporter_email, p.title as product_title, p.id as product_id
+            FROM reports r
+            JOIN users u ON r.reporter_id = u.id
+            JOIN products p ON r.product_id = p.id
+            ORDER BY r.created_at DESC
+        `)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+        defer rows.Close()
+
+        var reports []map[string]interface{}
+        for rows.Next() {
+            var id int
+            var reason, status, createdAt, reporterEmail, productTitle string
+            var productID int
+            rows.Scan(&id, &reason, &status, &createdAt, &reporterEmail, &productTitle, &productID)
+
+            reports = append(reports, map[string]interface{}{
+                "id":             id,
+                "reason":         reason,
+                "status":         status,
+                "created_at":     createdAt,
+                "reporter_email": reporterEmail,
+                "product_title":  productTitle,
+                "product_id":     productID,
+            })
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(reports)
+    }
+}
+
+// Admin: Update report status
+func UpdateReportStatus(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        reportID := vars["id"]
+
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, userID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+
+        var req struct {
+            Status string `json:"status"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+
+        _, err := db.Exec("UPDATE reports SET status = ? WHERE id = ?", req.Status, reportID)
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "report updated"})
+    }
+}
+
+// Admin: Ban a user
+func BanUser(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        targetUserID := vars["id"]
+
+        session, _ := store.Get(r, "session")
+        adminID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, adminID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+
+        var req struct {
+            Reason string `json:"reason"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+
+        _, err := db.Exec(`
+            UPDATE users SET is_banned = 1, ban_reason = ?, banned_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+        `, req.Reason, targetUserID)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "user banned"})
+    }
+}
+
+// Admin: Unban a user
+func UnbanUser(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        targetUserID := vars["id"]
+
+        session, _ := store.Get(r, "session")
+        adminID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, adminID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+
+        _, err := db.Exec(`
+            UPDATE users SET is_banned = 0, ban_reason = NULL, banned_at = NULL 
+            WHERE id = ?
+        `, targetUserID)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "user unbanned"})
+    }
+}
+
+// Admin: Send message to user
+func AdminSendMessage(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        targetUserID := vars["id"]
+
+        session, _ := store.Get(r, "session")
+        adminID, ok := session.Values["user_id"].(int)
+        if !ok || !isAdmin(db, adminID) {
+            http.Error(w, "Unauthorized", 403)
+            return
+        }
+
+        var req struct {
+            Subject string `json:"subject"`
+            Message string `json:"message"`
+        }
+        json.NewDecoder(r.Body).Decode(&req)
+
+        _, err := db.Exec(`
+            INSERT INTO messages (from_user_id, to_user_id, subject, message, is_admin_message)
+            VALUES (?, ?, ?, ?, 1)
+        `, adminID, targetUserID, req.Subject, req.Message)
+
+        if err != nil {
+            http.Error(w, err.Error(), 500)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"status": "message sent"})
+    }
+}
+
+func InboxHandler(w http.ResponseWriter, r *http.Request) {
+    session, _ := store.Get(r, "session")
+    userID, ok := session.Values["user_id"].(int)
+    if !ok {
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
+    _ = userID
+    w.Header().Set("Content-Type", "text/html")
+    http.ServeFile(w, r, "./views/inbox.html")
+}
+
+// Check if user is banned
+func isBanned(db *sql.DB, userID int) bool {
+    var isBanned int
+    err := db.QueryRow("SELECT is_banned FROM users WHERE id = ?", userID).Scan(&isBanned)
+    if err != nil {
+        return false
+    }
+    return isBanned == 1
+}
+
+// Middleware to check if user is banned
+func checkBanned(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        session, _ := store.Get(r, "session")
+        userID, ok := session.Values["user_id"].(int)
+        if ok && isBanned(db, userID) {
+            // Get ban reason
+            var banReason string
+            db.QueryRow("SELECT ban_reason FROM users WHERE id = ?", userID).Scan(&banReason)
+            w.Header().Set("Content-Type", "application/json")
+            w.WriteHeader(http.StatusForbidden)
+            json.NewEncoder(w).Encode(map[string]interface{}{
+                "error": "banned",
+                "message": "Your account has been banned",
+                "reason": banReason,
+            })
+            return
+        }
+        next(w, r)
+    }
 }
